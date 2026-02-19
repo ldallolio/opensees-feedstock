@@ -1,5 +1,5 @@
 {% set name = "OpenSees" %}
-{% set version = "3.7.1" %}
+{% set version = "3.8.0" %}
 
 package:
   name: {{ name|lower }}
@@ -7,11 +7,11 @@ package:
 
 source:
   url: https://github.com/OpenSees/OpenSees/archive/refs/tags/v{{ version }}.tar.gz
-  sha256: fa805d2db131939b06042568f56b875c40d80a46c96b0d60dbfbfa0fbbceaaa6
+  sha256: 395d89f97ad0fe2a857e31b045c96badf23ad19ba8ce38f21c5a5d7891091810
 
 build:
-  skip: True  # [not linux]
-  number: 6
+  skip: true  # [not linux]
+  number: 0
 
 requirements:
   build:
@@ -41,7 +41,7 @@ requirements:
     - libscotch
     - libaec
     - libcurl
-    - openssl    
+    - openssl
   run:
     - scalapack
     - python
@@ -56,8 +56,7 @@ test:
 
 about:
   home: https://opensees.berkeley.edu/
-  summary: 'Simulate the performance of structural and geotechnical systems 
-     subjected to earthquakes'
+  summary: 'Simulate the performance of structural and geotechnical systems subjected to earthquakes'
   description: |
     OpenSees is a software framework for developing applications
      to simulate the performance of structural and geotechnical systems 
