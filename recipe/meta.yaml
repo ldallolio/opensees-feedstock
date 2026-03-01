@@ -11,7 +11,6 @@ source:
 
 build:
   number: 1
-  # Instructions say Python 3.12+ is not supported yet
   skip: true  # [py>=312]
 
 requirements:
@@ -23,20 +22,23 @@ requirements:
     - cmake
     - make   # [unix]
     - ninja  # [win]
+    - llvm-openmp  # [osx]
+    - intel-openmp # [win]
+    - libgomp      # [linux]
     - openmpi  # [unix]
     - msmpi    # [win]
   host:
     - python
     - pip
     - setuptools
-    # Use the BLAS multiplexer instead of forcing MKL directly for MUMPS compatibility
+    # Use generic BLAS/LAPACK to avoid "m2w64" conflicts on Windows
     - libblas
     - libcblas
     - liblapack
     - mumps
+    - scalapack
     - eigen
     - hdf5
-    - scalapack
     - tk
     - zlib
     - metis
@@ -48,9 +50,12 @@ requirements:
     - msmpi    # [win]
   run:
     - python
-    - libblas  # This will pull in the necessary runtime (MKL or OpenBLAS)
+    - libblas
     - scalapack
+    - mumps
+    # Explicit runtimes for OpenMP on Windows/Mac
     - intel-openmp  # [win]
+    - llvm-openmp   # [osx]
     - openmpi  # [unix]
     - msmpi    # [win]
 
@@ -58,17 +63,12 @@ test:
   commands:
     - test -f $PREFIX/bin/OpenSees  # [unix]
     - if not exist %LIBRARY_BIN%\\OpenSees.exe exit 1  # [win]
-
   imports:
     - opensees
 
 about:
   home: https://opensees.berkeley.edu/
   summary: 'Simulate the performance of structural and geotechnical systems subjected to earthquakes'
-  description: |
-    OpenSees is a software framework for developing applications
-     to simulate the performance of structural and geotechnical systems 
-     subjected to earthquakes. 
   license: BSD-4-Clause-UC
   license_family: BSD
   license_file: COPYRIGHT

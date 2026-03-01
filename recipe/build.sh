@@ -1,30 +1,37 @@
 #!/bin/bash
 set -ex
 
-# Conda-build defines SHLIB_EXT (.so for Linux, .dylib for MacOS)
-# However, Python modules on both MUST end in .so
+# 1. Handle SDK paths for macOS to prevent "header not found" errors
+if [[ "$target_platform" == osx-* ]]; then
+    export CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_OSX_SYSROOT=${CONDA_BUILD_SYSROOT}"
+fi
 
-# 1. Configure
-# We add -DEIGEN3_INCLUDE_DIR to fix the Mac header issue mentioned in the instructions
+# 2. Configure
 cmake ${CMAKE_ARGS} \
       -DCMAKE_BUILD_TYPE=Release \
       -DMUMPS_DIR=$PREFIX \
-      -DOPENMPI=TRUE \
-      -DEIGEN3_INCLUDE_DIR=$PREFIX/include/eigen3 \
-      -DCMAKE_CXX_FLAGS="$CXXFLAGS -fpermissive" \
+      -DOpenSees_ENABLE_MPI=ON \
+      -DOpenSees_ENABLE_MUMPS=ON \
+      -DCMAKE_CXX_FLAGS="$CXXFLAGS -fpermissive -isystem $PREFIX/include/eigen3" \
       -S . -B build
 
-# 2. Build
+# 3. Build
 cmake --build ./build --config Release --target OpenSees   --parallel $CPU_COUNT
 cmake --build ./build --config Release --target OpenSeesPy --parallel $CPU_COUNT
+cmake --build ./build --config Release --target OpenSeesSP --parallel $CPU_COUNT
+cmake --build ./build --config Release --target OpenSeesMP --parallel $CPU_COUNT
 
-# 3. Install
-cmake --install ./build
+# 4. Install
+cmake --install ./build --verbose
 
-# 4. Manual Move/Rename per OpenSees Instructions
-# The build results are usually in ./build/ or ./build/lib/
+# 5. Rename Python Module (OpenSeesPy -> opensees.so)
+# We use SHLIB_EXT which is .dylib on Mac and .so on Linux
 if [ -f "./build/OpenSeesPy${SHLIB_EXT}" ]; then
     cp "./build/OpenSeesPy${SHLIB_EXT}" "$SP_DIR/opensees.so"
 elif [ -f "./build/lib/OpenSeesPy${SHLIB_EXT}" ]; then
     cp "./build/lib/OpenSeesPy${SHLIB_EXT}" "$SP_DIR/opensees.so"
 fi
+
+# 6. Ensure executables are in the bin folder
+cp ./build/OpenSeesSP $PREFIX/bin/ || true
+cp ./build/OpenSeesMP $PREFIX/bin/ || true
