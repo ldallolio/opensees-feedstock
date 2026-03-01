@@ -20,13 +20,13 @@ requirements:
     - {{ compiler('fortran') }}
     - {{ stdlib('c') }}
     - cmake
-    - make   # [unix]
+    - make  # [unix]
     - ninja  # [win]
     - llvm-openmp  # [osx]
-    - intel-openmp # [win]
-    - libgomp      # [linux]
+    - intel-openmp  # [win]
+    - libgomp  # [linux]
     - openmpi  # [unix]
-    - msmpi    # [win]
+    - msmpi  # [win]
   host:
     - python
     - pip
@@ -47,7 +47,7 @@ requirements:
     - libcurl
     - openssl
     - openmpi  # [unix]
-    - msmpi    # [win]
+    - msmpi  # [win]
   run:
     - python
     - libblas
@@ -55,9 +55,9 @@ requirements:
     - mumps
     # Explicit runtimes for OpenMP on Windows/Mac
     - intel-openmp  # [win]
-    - llvm-openmp   # [osx]
+    - llvm-openmp  # [osx]
     - openmpi  # [unix]
-    - msmpi    # [win]
+    - msmpi  # [win]
 
 test:
   commands:

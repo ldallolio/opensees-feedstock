@@ -13,11 +13,6 @@ Development: https://github.com/OpenSees/OpenSees
 
 Documentation: https://opensees.github.io/OpenSeesDocumentation/
 
-OpenSees is a software framework for developing applications
- to simulate the performance of structural and geotechnical systems
- subjected to earthquakes.
-
-
 Current build status
 ====================
 
