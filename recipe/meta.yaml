@@ -10,7 +10,7 @@ source:
   sha256: 395d89f97ad0fe2a857e31b045c96badf23ad19ba8ce38f21c5a5d7891091810
 
 build:
-  number: 0
+  number: 1
   # Instructions say Python 3.12+ is not supported yet
   skip: true  # [py>=312]
 
