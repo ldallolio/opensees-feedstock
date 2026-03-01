@@ -10,8 +10,9 @@ source:
   sha256: 395d89f97ad0fe2a857e31b045c96badf23ad19ba8ce38f21c5a5d7891091810
 
 build:
-  skip: true  # [not linux]
   number: 0
+  # Instructions say Python 3.12+ is not supported yet
+  skip: true  # [py>=312]
 
 requirements:
   build:
@@ -20,8 +21,11 @@ requirements:
     - {{ compiler('fortran') }}
     - {{ stdlib('c') }}
     - cmake
-    - make
-    - openmpi
+    - make   # [unix]
+    - ninja  # [win]
+    # Unix uses OpenMPI, Windows uses MSMPI on conda-forge
+    - openmpi  # [unix]
+    - msmpi    # [win]
   host:
     - python
     - pip
@@ -29,10 +33,8 @@ requirements:
     - mumps
     - eigen
     - hdf5
-    - openmpi
     - scalapack
     - tk
-    - mysql
     - zlib
     - mkl
     - mkl-include
@@ -42,14 +44,21 @@ requirements:
     - libaec
     - libcurl
     - openssl
+    - openmpi  # [unix]
+    - msmpi    # [win]
   run:
-    - scalapack
     - python
     - mkl
+    - scalapack
+    # Windows needs intel-openmp for the libiomp5md.dll dependency mentioned
+    - intel-openmp  # [win]
+    - openmpi  # [unix]
+    - msmpi    # [win]
 
 test:
   commands:
     - test -f $PREFIX/bin/OpenSees  # [unix]
+    - if not exist %LIBRARY_BIN%\\OpenSees.exe exit 1  # [win]
 
   imports:
     - opensees
@@ -61,11 +70,6 @@ about:
     OpenSees is a software framework for developing applications
      to simulate the performance of structural and geotechnical systems 
      subjected to earthquakes. 
-     The goal of the OpenSees development is to improve the modeling 
-     and computational simulation in earthquake engineering 
-     through open-source development.
-     The development of OpenSees was sponsored by 
-     the Pacific Earthquake Engineering Research Center.
   license: BSD-4-Clause-UC
   license_family: BSD
   license_file: COPYRIGHT
