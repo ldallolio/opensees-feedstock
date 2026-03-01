@@ -1,34 +1,30 @@
 #!/bin/bash
 set -ex
 
-# Configure
-# We use CMAKE_ARGS which contains many of the cross-platform 
-# paths and flags provided by conda-forge.
+# Conda-build defines SHLIB_EXT (.so for Linux, .dylib for MacOS)
+# However, Python modules on both MUST end in .so
+
+# 1. Configure
+# We add -DEIGEN3_INCLUDE_DIR to fix the Mac header issue mentioned in the instructions
 cmake ${CMAKE_ARGS} \
       -DCMAKE_BUILD_TYPE=Release \
-      -DMUMPS_DIR=$PREFIX/lib \
+      -DMUMPS_DIR=$PREFIX \
       -DOPENMPI=TRUE \
-      -DCMAKE_CXX_FLAGS="$CXXFLAGS -fpermissive -isystem $PREFIX/include/eigen3" \
+      -DEIGEN3_INCLUDE_DIR=$PREFIX/include/eigen3 \
+      -DCMAKE_CXX_FLAGS="$CXXFLAGS -fpermissive" \
       -S . -B build
 
-# Build all targets
+# 2. Build
 cmake --build ./build --config Release --target OpenSees   --parallel $CPU_COUNT
 cmake --build ./build --config Release --target OpenSeesPy --parallel $CPU_COUNT
-cmake --build ./build --config Release --target OpenSeesSP --parallel $CPU_COUNT
-cmake --build ./build --config Release --target OpenSeesMP --parallel $CPU_COUNT
 
-# Install
-cmake --install ./build --verbose
+# 3. Install
+cmake --install ./build
 
-# Handle the Python module renaming
-# We use the built-in $SHLIB_EXT to find what CMake produced (.so or .dylib)
-# But we ALWAYS name the output opensees.so for the Python loader on Unix
+# 4. Manual Move/Rename per OpenSees Instructions
+# The build results are usually in ./build/ or ./build/lib/
 if [ -f "./build/OpenSeesPy${SHLIB_EXT}" ]; then
     cp "./build/OpenSeesPy${SHLIB_EXT}" "$SP_DIR/opensees.so"
 elif [ -f "./build/lib/OpenSeesPy${SHLIB_EXT}" ]; then
     cp "./build/lib/OpenSeesPy${SHLIB_EXT}" "$SP_DIR/opensees.so"
 fi
-
-# Ensure parallel executables are in bin
-cp ./build/OpenSeesSP $PREFIX/bin/
-cp ./build/OpenSeesMP $PREFIX/bin/

@@ -23,22 +23,22 @@ requirements:
     - cmake
     - make   # [unix]
     - ninja  # [win]
-    # Unix uses OpenMPI, Windows uses MSMPI on conda-forge
     - openmpi  # [unix]
     - msmpi    # [win]
   host:
     - python
     - pip
     - setuptools
+    # Use the BLAS multiplexer instead of forcing MKL directly for MUMPS compatibility
+    - libblas
+    - libcblas
+    - liblapack
     - mumps
     - eigen
     - hdf5
     - scalapack
     - tk
     - zlib
-    - mkl
-    - mkl-include
-    - mkl-devel
     - metis
     - libscotch
     - libaec
@@ -48,9 +48,8 @@ requirements:
     - msmpi    # [win]
   run:
     - python
-    - mkl
+    - libblas  # This will pull in the necessary runtime (MKL or OpenBLAS)
     - scalapack
-    # Windows needs intel-openmp for the libiomp5md.dll dependency mentioned
     - intel-openmp  # [win]
     - openmpi  # [unix]
     - msmpi    # [win]
