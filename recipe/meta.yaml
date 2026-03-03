@@ -33,6 +33,9 @@ requirements:
     - setuptools
     - blas * mkl  # [win]
     - blas * openblas  # [unix]
+    - libblas
+    - libcblas
+    - liblapack
     - mumps
     - scalapack
     - eigen

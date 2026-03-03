@@ -26,8 +26,14 @@ hdf5:
 - 1.14.6
 libaec:
 - '1'
+libblas:
+- 3.9.* *openblas
+libcblas:
+- 3.9.* *openblas
 libcurl:
 - '8'
+liblapack:
+- 3.9.* *openblas
 libscotch:
 - 7.0.11
 llvm_openmp:

@@ -12,6 +12,8 @@ fi
 cmake ${CMAKE_ARGS} \
       -DCMAKE_BUILD_TYPE=Release \
       -DMUMPS_DIR=$PREFIX \
+      -DTCL_LIBRARY=$PREFIX/lib/libtcl8.6${SHLIB_EXT} \
+      -DTCL_INCLUDE_PATH=$PREFIX/include \      
       -DOpenSees_ENABLE_MPI=ON \
       -DOpenSees_ENABLE_MUMPS=ON \
       -DCMAKE_CXX_FLAGS="$CXXFLAGS -fpermissive -isystem $PREFIX/include/eigen3" \

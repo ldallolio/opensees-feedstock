@@ -1,0 +1,6 @@
+libblas:
+  - 3.9.* *mkl  # [win]
+libcblas:
+  - 3.9.* *mkl  # [win]
+liblapack:
+  - 3.9.* *mkl  # [win]
