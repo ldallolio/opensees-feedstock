@@ -1,6 +1,8 @@
 #!/bin/bash
 set -ex
 
+export CXXFLAGS="${CXXFLAGS} -Wno-write-strings -Wno-strict-aliasing -Wno-error=narrowing"
+
 # 1. Handle SDK paths for macOS to prevent "header not found" errors
 if [[ "$target_platform" == osx-* ]]; then
     export CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_OSX_SYSROOT=${CONDA_BUILD_SYSROOT}"

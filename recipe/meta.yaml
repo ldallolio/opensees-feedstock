@@ -31,10 +31,8 @@ requirements:
     - python
     - pip
     - setuptools
-    # Use generic BLAS/LAPACK to avoid "m2w64" conflicts on Windows
-    - libblas
-    - libcblas
-    - liblapack
+    - blas * mkl  # [win]
+    - blas * openblas  # [unix]
     - mumps
     - scalapack
     - eigen
