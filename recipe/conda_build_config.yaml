@@ -1,6 +1,9 @@
 libblas:
   - 3.9.* *mkl  # [win]
+  - 3.9.* *openblas  # [unix]
 libcblas:
   - 3.9.* *mkl  # [win]
+  - 3.9.* *openblas  # [unix]
 liblapack:
   - 3.9.* *mkl  # [win]
+  - 3.9.* *openblas  # [unix]
