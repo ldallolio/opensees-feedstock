@@ -40,7 +40,6 @@ requirements:
     - scalapack
     - eigen
     - hdf5
-    - tcl
     - tk
     - zlib
     - metis
@@ -55,7 +54,6 @@ requirements:
     - libblas
     - scalapack
     - mumps
-    # Explicit runtimes for OpenMP on Windows/Mac
     - intel-openmp  # [win]
     - llvm-openmp  # [osx]
     - openmpi  # [unix]
