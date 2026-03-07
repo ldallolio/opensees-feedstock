@@ -9,12 +9,11 @@ cmake -G "Ninja" ^
       -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^
       -DCMAKE_PREFIX_PATH=%LIBRARY_PREFIX% ^
       -DCMAKE_BUILD_TYPE=Release ^
-      -DMUMPS_DIR=%LIBRARY_PREFIX% ^
-      -DSCALAPACK_LIBRARIES=%LIBRARY_PREFIX%/lib/scalapack.lib ^
       -DTCL_LIBRARY=%LIBRARY_PREFIX%/lib/tcl86t.lib ^
       -DTCL_INCLUDE_PATH=%LIBRARY_PREFIX%/include ^
       -DOPENMPI=FALSE ^
       -DMSMPI=TRUE ^
+      -DOpenSees_ENABLE_MUMPS=OFF ^
       -DCMAKE_CXX_FLAGS="/EHsc /w" ^
       ..
 

@@ -12,6 +12,8 @@ source:
 build:
   number: 1
   skip: true  # [py>=312]
+  missing_dso_whitelist:
+    - "*/libopenblas.*"
 
 requirements:
   build:
@@ -31,19 +33,20 @@ requirements:
     - python
     - pip
     - setuptools
-    - blas * mkl  # [win]
-    - blas * openblas  # [unix]
-    - libblas
-    - libcblas
-    - liblapack
-    - mumps
-    - scalapack
+    - libblas * *openblas  # [unix]
+    - libcblas * *openblas  # [unix]
+    - liblapack * *openblas  # [unix]
+    - libblas  # [win]
+    - libcblas  # [win]
+    - liblapack  # [win]
+    - mumps-mpi  # [unix]
+    - scalapack  # [unix]
     - eigen
     - hdf5
     - tk
     - zlib
     - metis
-    - libscotch
+    - libscotch  # [unix]
     - libaec
     - libcurl
     - openssl
@@ -51,9 +54,11 @@ requirements:
     - msmpi  # [win]
   run:
     - python
-    - libblas
-    - scalapack
-    - mumps
+    - libblas * *openblas  # [unix]
+    - libcblas * *openblas  # [unix]
+    - liblapack * *openblas  # [unix]
+    - mumps-mpi  # [unix]
+    - scalapack  # [unix]
     - intel-openmp  # [win]
     - llvm-openmp  # [osx]
     - openmpi  # [unix]
