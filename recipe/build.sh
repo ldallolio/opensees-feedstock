@@ -7,26 +7,32 @@ export CXXFLAGS="${CXXFLAGS} -Wno-write-strings -Wno-strict-aliasing -Wno-error=
 # This natively resolves the hardcoded "-ltcl8.6" OpenSees linker error
 export LIBRARY_PATH="$PREFIX/lib:$LIBRARY_PATH"
 
+export SHARED_LDFLAGS="${LDFLAGS}"
+
 # 1. Handle SDK paths for macOS and exact library names
 if [[ "$target_platform" == osx-* ]]; then
     export CMAKE_ARGS="${CMAKE_ARGS} -DCMAKE_OSX_SYSROOT=${CONDA_BUILD_SYSROOT}"
     export TCL_LIB_PATH="${PREFIX}/lib/libtcl8.6.dylib"
     export SCALAPACK_LIB_PATH="${PREFIX}/lib/libscalapack.dylib"
     export EXT=".dylib"
+    
+    # macOS requires undefined dynamic lookup for Python C-extensions
+    export SHARED_LDFLAGS="${LDFLAGS} -undefined dynamic_lookup"
 else
     export TCL_LIB_PATH="${PREFIX}/lib/libtcl8.6.so"
     export SCALAPACK_LIB_PATH="${PREFIX}/lib/libscalapack.so"
     export EXT=".so"
 fi
 
-# 2. Fix OpenSees hardcoded static MUMPS paths
-# OpenSees explicitly looks for .a files. We use sed to switch these to .so / .dylib
+# 2. Fix OpenSees hardcoded static MUMPS paths and Python double-linking
 for mumps_lib in libdmumps libmumps_common libpord libsmumps libcmumps libzmumps; do
     if [[ "$target_platform" == osx-* ]]; then
-        # macOS requires a space after -i
         find . -type f -name "CMakeLists.txt" -exec sed -i '' "s/${mumps_lib}\.a/${mumps_lib}${EXT}/g" {} +
+        # Fix macOS Python segfault by using the Module target instead of full Python
+        find . -type f -name "CMakeLists.txt" -exec sed -i '' 's/Python3::Python/Python3::Module/g' {} +
     else
         find . -type f -name "CMakeLists.txt" -exec sed -i "s/${mumps_lib}\.a/${mumps_lib}${EXT}/g" {} +
+        find . -type f -name "CMakeLists.txt" -exec sed -i 's/Python3::Python/Python3::Module/g' {} +
     fi
 done
 
@@ -39,7 +45,8 @@ cmake ${CMAKE_ARGS} \
       -DSCALAPACK_LIBRARIES=$SCALAPACK_LIB_PATH \
       -DCMAKE_CXX_FLAGS="$CXXFLAGS -fpermissive -isystem $PREFIX/include/eigen3" \
       -DCMAKE_EXE_LINKER_FLAGS="${LDFLAGS}" \
-      -DCMAKE_SHARED_LINKER_FLAGS="${LDFLAGS}" \
+      -DCMAKE_SHARED_LINKER_FLAGS="${SHARED_LDFLAGS}" \
+      -DCMAKE_MODULE_LINKER_FLAGS="${SHARED_LDFLAGS}" \
       -S . -B build
 
 # 4. Build

@@ -29,7 +29,6 @@ requirements:
     - intel-openmp  # [win]
     - libgomp  # [linux]
     - openmpi  # [unix]
-    - msmpi  # [win]
   host:
     - python
     - pip
@@ -52,7 +51,6 @@ requirements:
     - libcurl
     - openssl
     - openmpi  # [unix]
-    - msmpi  # [win]
   run:
     - python
     - libblas * *openblas  # [unix]
@@ -63,7 +61,6 @@ requirements:
     - intel-openmp  # [win]
     - llvm-openmp  # [osx]
     - openmpi  # [unix]
-    - msmpi  # [win]
 
 test:
   commands:
