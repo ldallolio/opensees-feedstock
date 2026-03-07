@@ -14,6 +14,7 @@ build:
   skip: true  # [py>=312]
   missing_dso_whitelist:
     - "*/libopenblas.*"
+    - "*/libquadmath.*"  # [osx]
 
 requirements:
   build:
