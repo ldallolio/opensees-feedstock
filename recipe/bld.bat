@@ -3,9 +3,9 @@ mkdir build
 cd build
 
 :: Configure CMake
-:: We use Ninja for faster builds on Windows
-:: Disable MPI explicitly since MUMPS is not available on Windows
-cmake -G "Ninja" ^
+:: We use the Visual Studio generator instead of Ninja to bypass 
+:: the cmd.exe 8191 character limit on Windows (which crashes flang)
+cmake -G "Visual Studio 17 2022" -A x64 ^
       -DCMAKE_INSTALL_PREFIX=%LIBRARY_PREFIX% ^
       -DCMAKE_PREFIX_PATH=%LIBRARY_PREFIX% ^
       -DCMAKE_BUILD_TYPE=Release ^

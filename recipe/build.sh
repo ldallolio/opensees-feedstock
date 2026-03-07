@@ -4,9 +4,7 @@ set -ex
 export CXXFLAGS="${CXXFLAGS} -Wno-write-strings -Wno-strict-aliasing -Wno-error=narrowing"
 
 # Force the linker to globally search the Conda environment's lib directory
-# This natively resolves the hardcoded "-ltcl8.6" OpenSees linker error
 export LIBRARY_PATH="$PREFIX/lib:$LIBRARY_PATH"
-
 export SHARED_LDFLAGS="${LDFLAGS}"
 
 # 1. Handle SDK paths for macOS and exact library names
@@ -24,15 +22,17 @@ else
     export EXT=".so"
 fi
 
-# 2. Fix OpenSees hardcoded static MUMPS paths and Python double-linking
+# 2. Fix OpenSees hardcoded paths & Python double-linking
 for mumps_lib in libdmumps libmumps_common libpord libsmumps libcmumps libzmumps; do
     if [[ "$target_platform" == osx-* ]]; then
         find . -type f -name "CMakeLists.txt" -exec sed -i '' "s/${mumps_lib}\.a/${mumps_lib}${EXT}/g" {} +
-        # Fix macOS Python segfault by using the Module target instead of full Python
-        find . -type f -name "CMakeLists.txt" -exec sed -i '' 's/Python3::Python/Python3::Module/g' {} +
+        # Prevent Python double-linking on macOS which causes Segfault 11
+        find . -type f -name "CMakeLists.txt" -exec sed -i '' 's/\${PYTHON_LIBRARIES}//g' {} +
+        find . -type f -name "CMakeLists.txt" -exec sed -i '' 's/\${Python3_LIBRARIES}//g' {} +
     else
         find . -type f -name "CMakeLists.txt" -exec sed -i "s/${mumps_lib}\.a/${mumps_lib}${EXT}/g" {} +
-        find . -type f -name "CMakeLists.txt" -exec sed -i 's/Python3::Python/Python3::Module/g' {} +
+        find . -type f -name "CMakeLists.txt" -exec sed -i 's/\${PYTHON_LIBRARIES}//g' {} +
+        find . -type f -name "CMakeLists.txt" -exec sed -i 's/\${Python3_LIBRARIES}//g' {} +
     fi
 done
 
