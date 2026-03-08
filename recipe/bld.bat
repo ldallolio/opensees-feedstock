@@ -9,25 +9,14 @@ echo         if file.lower().endswith(('.f', '.f90', '.f77', '.for')): >> patch.
 echo             f_path = os.path.join(root, file) >> patch.py
 echo             with open(f_path, 'r', encoding='latin1') as f: >> patch.py
 echo                 c = f.read() >> patch.py
-echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
-echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
 echo             if file.lower() == 'c14-sk-m.f': >> patch.py
-echo                 if 'integer mlsval' not in c_new.lower(): >> patch.py
-echo                     # Find the LAST implicit statement, or fallback to subroutine >> patch.py
-echo                     idx = c_new.lower().rfind('implicit ') >> patch.py
-echo                     if idx == -1: >> patch.py
-echo                         idx = c_new.lower().find('subroutine ') >> patch.py
-echo                     if idx != -1: >> patch.py
-echo                         idx_nl = c_new.find('\n', idx) >> patch.py
-echo                         # Skip over any Fortran 77 multi-line continuations (character in column 6) >> patch.py
-echo                         while idx_nl != -1: >> patch.py
-echo                             chars = c_new[idx_nl+1:idx_nl+7] >> patch.py
-echo                             if len(chars) == 6 and chars.startswith('     ') and chars[5] not in ' \r\n0': >> patch.py
-echo                                 idx_nl = c_new.find('\n', idx_nl+1) >> patch.py
-echo                             else: >> patch.py
-echo                                 break >> patch.py
-echo                         if idx_nl != -1: >> patch.py
-echo                             c_new = c_new[:idx_nl+1] + '      integer mlsval\n' + c_new[idx_nl+1:] >> patch.py
+echo                 # Directly swap implicit none with the missing declaration >> patch.py
+echo                 c_new = re.sub(r'(?i)implicit\s+none', '      integer mlsval', c) >> patch.py
+echo                 c_new = re.sub(r'(?i)implicit\s+undefined', '      integer mlsval', c_new) >> patch.py
+echo             else: >> patch.py
+echo                 # Safely blank it out for all other files >> patch.py
+echo                 c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
+echo                 c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
 echo             if c != c_new: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
 echo                     f.write(c_new) >> patch.py
