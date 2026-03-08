@@ -12,8 +12,8 @@ echo                 c = f.read() >> patch.py
 echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
 echo             if file.lower() == 'c14-sk-m.f': >> patch.py
 echo                 if 'integer mlsval' not in c_new.lower(): >> patch.py
-echo                     # Find subroutine, skip continuations until the closing parenthesis, then inject
-echo                     patt = r'(?i)(subroutine\s+nlu014[^' + chr(41) + r']*' + chr(41) + r')' >> patch.py
+echo                     # Use chr(94) for caret and chr(41) for closing paren to bypass cmd.exe escape hell >> patch.py
+echo                     patt = r'(?i)(subroutine\s+nlu014[' + chr(94) + chr(41) + r']*' + chr(41) + r')' >> patch.py
 echo                     c_new = re.sub(patt, r'\1\n      integer mlsval', c_new) >> patch.py
 echo             if c != c_new: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
