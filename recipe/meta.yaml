@@ -8,8 +8,6 @@ package:
 source:
   url: https://github.com/OpenSees/OpenSees/archive/refs/tags/v{{ version }}.tar.gz
   sha256: 395d89f97ad0fe2a857e31b045c96badf23ad19ba8ce38f21c5a5d7891091810
-  patches:
-    - patches/flang_implicit_none.patch  # [win]
 
 build:
   number: 1

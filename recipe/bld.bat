@@ -1,3 +1,25 @@
+:: Remove read-only attributes natively on Windows to prevent PermissionErrors
+attrib -R SRC\*.* /S
+
+:: Write a robust Python patch script to fix Flang's strictness dynamically
+echo import os, re > patch.py
+echo for root, dirs, files in os.walk('SRC'): >> patch.py
+echo     for file in files: >> patch.py
+echo         if file.lower().endswith(('.f', '.f90', '.f77', '.for')): >> patch.py
+echo             f_path = os.path.join(root, file) >> patch.py
+echo             with open(f_path, 'r', encoding='latin1') as file_obj: >> patch.py
+echo                 c = file_obj.read() >> patch.py
+echo             # Replace 'implicit none' with 13 spaces to preserve Fortran fixed-column width >> patch.py
+echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
+echo             if c != c_new: >> patch.py
+echo                 with open(f_path, 'w', encoding='latin1') as file_obj: >> patch.py
+echo                     file_obj.write(c_new) >> patch.py
+echo                 print(f'Patched {f_path}') >> patch.py
+
+:: Execute the patch
+python patch.py
+if errorlevel 1 exit 1
+
 :: Setup build directory
 mkdir build
 cd build
@@ -14,7 +36,7 @@ cmake -G "NMake Makefiles JOM" ^
       ..
 if errorlevel 1 exit 1
 
-:: Build sequential targets
+:: Build sequential targets to bypass CMD.exe character limits
 cmake --build . --config Release --target OpenSees --parallel %CPU_COUNT%
 if errorlevel 1 exit 1
 
