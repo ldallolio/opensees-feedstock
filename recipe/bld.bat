@@ -9,14 +9,14 @@ echo         if file.lower().endswith(('.f', '.f90', '.f77', '.for')): >> patch.
 echo             f_path = os.path.join(root, file) >> patch.py
 echo             with open(f_path, 'r', encoding='latin1') as f: >> patch.py
 echo                 c = f.read() >> patch.py
-echo             if file.lower() == 'c14-sk-m.f': >> patch.py
-echo                 # Directly swap implicit none with the missing declaration >> patch.py
-echo                 c_new = re.sub(r'(?i)implicit\s+none', '      integer mlsval', c) >> patch.py
-echo                 c_new = re.sub(r'(?i)implicit\s+undefined', '      integer mlsval', c_new) >> patch.py
-echo             else: >> patch.py
-echo                 # Safely blank it out for all other files >> patch.py
-echo                 c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
-echo                 c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
+echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
+echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
+echo             if file.lower() == 'c14-sk-m.f' and 'integer mlsval' not in c_new.lower(): >> patch.py
+echo                 idx1 = c_new.lower().find('subroutine nlu014') >> patch.py
+echo                 if idx1 != -1: >> patch.py
+echo                     idx2 = c_new.find(')', idx1) >> patch.py
+echo                     if idx2 != -1: >> patch.py
+echo                         c_new = c_new[:idx2+1] + '\n      integer mlsval' + c_new[idx2+1:] >> patch.py
 echo             if c != c_new: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
 echo                     f.write(c_new) >> patch.py
