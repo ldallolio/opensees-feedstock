@@ -22,19 +22,17 @@ else
     export EXT=".so"
 fi
 
-# 2. Fix OpenSees hardcoded paths & Python double-linking
+# 2. Fix OpenSees hardcoded paths & Python double-linking via Perl
 for mumps_lib in libdmumps libmumps_common libpord libsmumps libcmumps libzmumps; do
-    if [[ "$target_platform" == osx-* ]]; then
-        find . -type f -name "CMakeLists.txt" -exec sed -i '' "s/${mumps_lib}\.a/${mumps_lib}${EXT}/g" {} +
-        # Prevent Python double-linking on macOS which causes Segfault 11
-        find . -type f -name "CMakeLists.txt" -exec sed -i '' 's/\${PYTHON_LIBRARIES}//g' {} +
-        find . -type f -name "CMakeLists.txt" -exec sed -i '' 's/\${Python3_LIBRARIES}//g' {} +
-    else
-        find . -type f -name "CMakeLists.txt" -exec sed -i "s/${mumps_lib}\.a/${mumps_lib}${EXT}/g" {} +
-        find . -type f -name "CMakeLists.txt" -exec sed -i 's/\${PYTHON_LIBRARIES}//g' {} +
-        find . -type f -name "CMakeLists.txt" -exec sed -i 's/\${Python3_LIBRARIES}//g' {} +
-    fi
+    perl -pi -e "s/${mumps_lib}\.a/${mumps_lib}${EXT}/g" $(find . -type f -name "CMakeLists.txt")
 done
+
+# Remove all hardcoded Python library links to fix macOS Segfault 11
+perl -pi -e 's/Python3::Python/Python3::Module/g' $(find . -type f -name "CMakeLists.txt")
+perl -pi -e 's/Python::Python/Python::Module/g' $(find . -type f -name "CMakeLists.txt")
+perl -pi -e 's/\$\{PYTHON_LIBRARIES\}//g' $(find . -type f -name "CMakeLists.txt")
+perl -pi -e 's/\$\{Python_LIBRARIES\}//g' $(find . -type f -name "CMakeLists.txt")
+perl -pi -e 's/\$\{Python3_LIBRARIES\}//g' $(find . -type f -name "CMakeLists.txt")
 
 # 3. Configure
 cmake ${CMAKE_ARGS} \

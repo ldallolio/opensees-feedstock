@@ -24,6 +24,7 @@ requirements:
     - {{ stdlib('c') }}
     - cmake
     - make  # [unix]
+    - jom  # [win]
     - llvm-openmp  # [osx]
     - intel-openmp  # [win]
     - libgomp  # [linux]
