@@ -1,13 +1,12 @@
-:: Patch the legacy Fortran file that is failing under Flang strictness
-python -c "import os; f='SRC/material/uniaxial/c14-SK-M.f'; c=open(f).read(); open(f,'w').write(c.replace('implicit none', ''))"
-
 :: Setup build directory
 mkdir build
 cd build
 
 :: Configure CMake
-:: We use NMake Makefiles JOM to completely bypass the 8191 cmd.exe 
-:: character limit that crashes the Fortran dependency scanner.
+:: 1. We use NMake Makefiles JOM to completely bypass the 8191 cmd.exe character limit.
+:: 2. Disable MPI explicitly since MUMPS is not available on Windows.
+:: 3. Pass -Mnof90 to Flang to prevent it from crashing on legacy F77 implicit declarations.
+:: 4. Pass -Kieee to strictly enforce IEEE floating-point math.
 cmake -G "NMake Makefiles JOM" ^
       -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
       -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
@@ -15,6 +14,7 @@ cmake -G "NMake Makefiles JOM" ^
       -DTCL_LIBRARY="%LIBRARY_PREFIX%/lib/tcl86t.lib" ^
       -DTCL_INCLUDE_PATH="%LIBRARY_PREFIX%/include" ^
       -DOpenSees_ENABLE_MPI=OFF ^
+      -DCMAKE_Fortran_FLAGS="-Mnof90 -Kieee" ^
       -DCMAKE_CXX_FLAGS="/EHsc /w" ^
       ..
 if errorlevel 1 exit 1
