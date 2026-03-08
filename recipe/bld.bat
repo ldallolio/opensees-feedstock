@@ -1,14 +1,15 @@
 :: Patch all legacy Fortran files that fail under Flang's strictness
 :: We make them writable, read with latin1 to avoid decode errors, and safely erase 'implicit none'
-echo import os, glob, re > patch.py
+echo import os, glob, re, stat > patch.py
 echo for f in glob.glob('SRC/**/*.f*', recursive=True): >> patch.py
 echo     try: >> patch.py
-echo         os.chmod(f, 0o666) >> patch.py
+echo         os.chmod(f, stat.S_IWRITE) >> patch.py
 echo         c = open(f, encoding='latin1').read() >> patch.py
 echo         c = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
 echo         open(f, 'w', encoding='latin1').write(c) >> patch.py
 echo     except Exception as e: >> patch.py
 echo         print('Error patching', f, e) >> patch.py
+
 python patch.py
 if errorlevel 1 exit 1
 
