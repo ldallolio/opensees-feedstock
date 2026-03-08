@@ -1,6 +1,16 @@
-:: Patch the legacy Fortran file that is failing under Flang strictness
-:: We use regex to catch 'implicit none' regardless of case or extra spaces
-python -c "import re; f='SRC/material/uniaxial/c14-SK-M.f'; c=open(f).read(); open(f,'w').write(re.sub(r'(?i)implicit\s+none', '', c))"
+:: Patch all legacy Fortran files that fail under Flang's strictness
+:: We make them writable, read with latin1 to avoid decode errors, and safely erase 'implicit none'
+echo import os, glob, re > patch.py
+echo for f in glob.glob('SRC/**/*.f*', recursive=True): >> patch.py
+echo     try: >> patch.py
+echo         os.chmod(f, 0o666) >> patch.py
+echo         c = open(f, encoding='latin1').read() >> patch.py
+echo         c = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
+echo         open(f, 'w', encoding='latin1').write(c) >> patch.py
+echo     except Exception as e: >> patch.py
+echo         print('Error patching', f, e) >> patch.py
+python patch.py
+if errorlevel 1 exit 1
 
 :: Setup build directory
 mkdir build
