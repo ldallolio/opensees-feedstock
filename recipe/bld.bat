@@ -2,22 +2,33 @@
 attrib -R SRC\*.* /S
 
 :: Safely patch Fortran files without breaking multi-line continuations
-echo import os, re > patch.py
+echo import os, re, sys > patch.py
 echo for root, dirs, files in os.walk('SRC'): >> patch.py
 echo     for file in files: >> patch.py
 echo         if file.lower().endswith(('.f', '.f90', '.f77', '.for')): >> patch.py
 echo             f_path = os.path.join(root, file) >> patch.py
 echo             with open(f_path, 'r', encoding='latin1') as f: >> patch.py
 echo                 c = f.read() >> patch.py
-echo             # Target c14-SK-M.f to swap 'implicit none' with the missing declaration >> patch.py
-echo             if file.lower() == 'c14-sk-m.f': >> patch.py
-echo                 c_new = re.sub(r'(?i)implicit\s+none', '      integer mlsval', c) >> patch.py
-echo             else: >> patch.py
-echo                 c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
+echo             c_new = c >> patch.py
+echo             # 1. Broadly strip all variations of implicit none/undefined >> patch.py
+echo             c_new = re.sub(r'(?i)implicit\s*none', '             ', c_new) >> patch.py
+echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
+echo             # 2. Safely inject integer mlsval specifically for c14-sk-m.f >> patch.py
+echo             if file.lower().strip() == 'c14-sk-m.f': >> patch.py
+echo                 lines = c_new.splitlines(True) >> patch.py
+echo                 for i in range(len(lines)): >> patch.py
+echo                     # Insert immediately before the first existing declaration to avoid continuations >> patch.py
+echo                     if re.match(r'^^ {5}[ \t]+(real^|integer^|double precision^|logical^|character)', lines[i], re.IGNORECASE): >> patch.py
+echo                         ending = '\r\n' if lines[i].endswith('\r\n') else '\n' >> patch.py
+echo                         lines.insert(i, '      integer mlsval' + ending) >> patch.py
+echo                         break >> patch.py
+echo                 c_new = ''.join(lines) >> patch.py
+echo             # Write changes >> patch.py
 echo             if c != c_new: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
 echo                     f.write(c_new) >> patch.py
 echo                 print(f'Patched {f_path}') >> patch.py
+echo sys.stdout.flush() >> patch.py
 
 :: Execute the patch
 python patch.py
@@ -39,11 +50,11 @@ cmake -G "NMake Makefiles JOM" ^
       ..
 if errorlevel 1 exit 1
 
-:: Build sequentially to catch any final errors clearly
-cmake --build . --config Release --target OpenSees --parallel 1
+:: Build parallel targets again for speed
+cmake --build . --config Release --target OpenSees --parallel %CPU_COUNT%
 if errorlevel 1 exit 1
 
-cmake --build . --config Release --target OpenSeesPy --parallel 1
+cmake --build . --config Release --target OpenSeesPy --parallel %CPU_COUNT%
 if errorlevel 1 exit 1
 
 :: Install Step
