@@ -1,34 +1,24 @@
 :: Remove read-only attributes natively on Windows
 attrib -R SRC\*.* /S
 
-:: Safely patch Fortran files without breaking multi-line continuations
-echo import os, re, sys > patch.py
+:: Safely patch Fortran files
+echo import os, re > patch.py
 echo for root, dirs, files in os.walk('SRC'): >> patch.py
 echo     for file in files: >> patch.py
 echo         if file.lower().endswith(('.f', '.f90', '.f77', '.for')): >> patch.py
 echo             f_path = os.path.join(root, file) >> patch.py
 echo             with open(f_path, 'r', encoding='latin1') as f: >> patch.py
 echo                 c = f.read() >> patch.py
-echo             c_new = c >> patch.py
-echo             # 1. Broadly strip all variations of implicit none/undefined >> patch.py
-echo             c_new = re.sub(r'(?i)implicit\s*none', '             ', c_new) >> patch.py
-echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
-echo             # 2. Safely inject integer mlsval specifically for c14-sk-m.f >> patch.py
-echo             if file.lower().strip() == 'c14-sk-m.f': >> patch.py
-echo                 lines = c_new.splitlines(True) >> patch.py
-echo                 for i in range(len(lines)): >> patch.py
-echo                     # Insert immediately before the first existing declaration to avoid continuations >> patch.py
-echo                     if re.match(r'^^ {5}[ \t]+(real^|integer^|double precision^|logical^|character)', lines[i], re.IGNORECASE): >> patch.py
-echo                         ending = '\r\n' if lines[i].endswith('\r\n') else '\n' >> patch.py
-echo                         lines.insert(i, '      integer mlsval' + ending) >> patch.py
-echo                         break >> patch.py
-echo                 c_new = ''.join(lines) >> patch.py
-echo             # Write changes >> patch.py
+echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
+echo             if file.lower() == 'c14-sk-m.f': >> patch.py
+echo                 if 'integer mlsval' not in c_new.lower(): >> patch.py
+echo                     # Find subroutine, skip continuations until the closing parenthesis, then inject
+echo                     patt = r'(?i)(subroutine\s+nlu014[^' + chr(41) + r']*' + chr(41) + r')' >> patch.py
+echo                     c_new = re.sub(patt, r'\1\n      integer mlsval', c_new) >> patch.py
 echo             if c != c_new: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
 echo                     f.write(c_new) >> patch.py
-echo                 print(f'Patched {f_path}') >> patch.py
-echo sys.stdout.flush() >> patch.py
+echo                 print('Patched', f_path) >> patch.py
 
 :: Execute the patch
 python patch.py
