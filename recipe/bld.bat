@@ -1,7 +1,7 @@
 :: Remove read-only attributes natively on Windows
 attrib -R SRC\*.* /S
 
-:: Safely patch Fortran files using string slicing instead of Regex
+:: Safely patch Fortran files
 echo import os, re > patch.py
 echo for root, dirs, files in os.walk('SRC'): >> patch.py
 echo     for file in files: >> patch.py
@@ -13,11 +13,21 @@ echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> p
 echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
 echo             if file.lower() == 'c14-sk-m.f': >> patch.py
 echo                 if 'integer mlsval' not in c_new.lower(): >> patch.py
-echo                     idx = c_new.lower().find('subroutine nlu014') >> patch.py
+echo                     # Find the LAST implicit statement, or fallback to subroutine >> patch.py
+echo                     idx = c_new.lower().rfind('implicit ') >> patch.py
+echo                     if idx == -1: >> patch.py
+echo                         idx = c_new.lower().find('subroutine ') >> patch.py
 echo                     if idx != -1: >> patch.py
-echo                         idx_close = c_new.find('\x29', idx) >> patch.py
-echo                         if idx_close != -1: >> patch.py
-echo                             c_new = c_new[:idx_close+1] + '\n      integer mlsval' + c_new[idx_close+1:] >> patch.py
+echo                         idx_nl = c_new.find('\n', idx) >> patch.py
+echo                         # Skip over any Fortran 77 multi-line continuations (character in column 6) >> patch.py
+echo                         while idx_nl != -1: >> patch.py
+echo                             chars = c_new[idx_nl+1:idx_nl+7] >> patch.py
+echo                             if len(chars) == 6 and chars.startswith('     ') and chars[5] not in ' \r\n0': >> patch.py
+echo                                 idx_nl = c_new.find('\n', idx_nl+1) >> patch.py
+echo                             else: >> patch.py
+echo                                 break >> patch.py
+echo                         if idx_nl != -1: >> patch.py
+echo                             c_new = c_new[:idx_nl+1] + '      integer mlsval\n' + c_new[idx_nl+1:] >> patch.py
 echo             if c != c_new: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
 echo                     f.write(c_new) >> patch.py
