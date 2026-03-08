@@ -1,7 +1,7 @@
 :: Remove read-only attributes natively on Windows
 attrib -R SRC\*.* /S
 
-:: Safely patch Fortran files
+:: Safely patch Fortran files using string slicing instead of Regex
 echo import os, re > patch.py
 echo for root, dirs, files in os.walk('SRC'): >> patch.py
 echo     for file in files: >> patch.py
@@ -10,11 +10,14 @@ echo             f_path = os.path.join(root, file) >> patch.py
 echo             with open(f_path, 'r', encoding='latin1') as f: >> patch.py
 echo                 c = f.read() >> patch.py
 echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
+echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
 echo             if file.lower() == 'c14-sk-m.f': >> patch.py
 echo                 if 'integer mlsval' not in c_new.lower(): >> patch.py
-echo                     # Use chr(94) for caret and chr(41) for closing paren to bypass cmd.exe escape hell >> patch.py
-echo                     patt = r'(?i)(subroutine\s+nlu014[' + chr(94) + chr(41) + r']*' + chr(41) + r')' >> patch.py
-echo                     c_new = re.sub(patt, r'\1\n      integer mlsval', c_new) >> patch.py
+echo                     idx = c_new.lower().find('subroutine nlu014') >> patch.py
+echo                     if idx != -1: >> patch.py
+echo                         idx_close = c_new.find('\x29', idx) >> patch.py
+echo                         if idx_close != -1: >> patch.py
+echo                             c_new = c_new[:idx_close+1] + '\n      integer mlsval' + c_new[idx_close+1:] >> patch.py
 echo             if c != c_new: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
 echo                     f.write(c_new) >> patch.py
