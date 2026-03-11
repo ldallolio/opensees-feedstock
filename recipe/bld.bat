@@ -1,25 +1,44 @@
 :: Remove read-only attributes natively on Windows
 attrib -R SRC\*.* /S
 
-:: Safely patch Fortran files
-echo import os, re > patch.py
+:: Safely patch Fortran files with strict F77 sequence compliance
+echo import os, re, sys > patch.py
 echo for root, dirs, files in os.walk('SRC'): >> patch.py
 echo     for file in files: >> patch.py
 echo         if file.lower().endswith(('.f', '.f90', '.f77', '.for')): >> patch.py
 echo             f_path = os.path.join(root, file) >> patch.py
 echo             with open(f_path, 'r', encoding='latin1') as f: >> patch.py
-echo                 c = f.read() >> patch.py
-echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
-echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
-echo             if file.lower() == 'c14-sk-m.f' and 'integer mlsval' not in c_new.lower(): >> patch.py
-echo                 idx1 = c_new.lower().find('subroutine nlu014') >> patch.py
-echo                 if idx1 != -1: >> patch.py
-echo                     idx2 = c_new.find(')', idx1) >> patch.py
-echo                     if idx2 != -1: >> patch.py
-echo                         c_new = c_new[:idx2+1] + '\n      integer mlsval' + c_new[idx2+1:] >> patch.py
-echo             if c != c_new: >> patch.py
+echo                 lines = f.readlines() >> patch.py
+echo             modified = False >> patch.py
+echo             for i in range(len(lines)): >> patch.py
+echo                 if re.search(r'(?i)implicit\s+none', lines[i]): >> patch.py
+echo                     lines[i] = re.sub(r'(?i)implicit\s+none', '             ', lines[i]) >> patch.py
+echo                     modified = True >> patch.py
+echo                 if re.search(r'(?i)implicit\s+undefined', lines[i]): >> patch.py
+echo                     lines[i] = re.sub(r'(?i)implicit\s+undefined', '                  ', lines[i]) >> patch.py
+echo                     modified = True >> patch.py
+echo             if file.lower() == 'c14-sk-m.f' and not any('integer mlsval' in l.lower() for l in lines): >> patch.py
+echo                 in_sub = False >> patch.py
+echo                 for i in range(len(lines)): >> patch.py
+echo                     low = lines[i].lower() >> patch.py
+echo                     if 'subroutine nlu014' in low: >> patch.py
+echo                         in_sub = True >> patch.py
+echo                     if in_sub: >> patch.py
+echo                         if not low.strip() or low.startswith('c') or low.startswith('*') or low.strip().startswith('!'): >> patch.py
+echo                             continue >> patch.py
+echo                         if 'subroutine' in low: >> patch.py
+echo                             continue >> patch.py
+echo                         if len(low) ^> 5 and low[5] not in ' 0\t\n\r': >> patch.py
+echo                             continue >> patch.py
+echo                         if low.strip().startswith('implicit'): >> patch.py
+echo                             continue >> patch.py
+echo                         ending = '\r\n' if lines[i].endswith('\r\n') else '\n' >> patch.py
+echo                         lines.insert(i, '      integer mlsval' + ending) >> patch.py
+echo                         modified = True >> patch.py
+echo                         break >> patch.py
+echo             if modified: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
-echo                     f.write(c_new) >> patch.py
+echo                     f.writelines(lines) >> patch.py
 echo                 print('Patched', f_path) >> patch.py
 
 :: Execute the patch
