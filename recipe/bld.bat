@@ -5,40 +5,47 @@ attrib -R SRC\*.* /S
 echo import os, re > patch.py
 echo for root, dirs, files in os.walk('SRC'): >> patch.py
 echo     for file in files: >> patch.py
-echo         if file.lower().endswith(('.f', '.f90', '.f77', '.for')): >> patch.py
+echo         if file.lower().endswith(('.f', '.f90', '.f77', '.for', '.h', '.inc')): >> patch.py
 echo             f_path = os.path.join(root, file) >> patch.py
-echo             with open(f_path, 'r', encoding='latin1') as f: >> patch.py
-echo                 c = f.read() >> patch.py
-echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
-echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
+echo             try: >> patch.py
+echo                 with open(f_path, 'r', encoding='latin1') as f: >> patch.py
+echo                     lines = f.readlines() >> patch.py
+echo             except: continue >> patch.py
+echo             modified = False >> patch.py
+echo             for i in range(len(lines)): >> patch.py
+echo                 orig = lines[i] >> patch.py
+echo                 lines[i] = re.sub(r'(?i)implicit\s*none', '             ', lines[i]) >> patch.py
+echo                 lines[i] = re.sub(r'(?i)implicit\s*undefined', '                  ', lines[i]) >> patch.py
+echo                 if lines[i] != orig: >> patch.py
+echo                     modified = True >> patch.py
 echo             if file.lower() == 'c14-sk-m.f': >> patch.py
-echo                 lines = c_new.splitlines() >> patch.py
 echo                 insert_idx = -1 >> patch.py
 echo                 in_sub = False >> patch.py
 echo                 for i in range(len(lines)): >> patch.py
 echo                     line = lines[i] >> patch.py
 echo                     padded = line + '       ' >> patch.py
-echo                     stmt = padded[6:].strip().lower() >> patch.py
-echo                     if re.match(r'subroutine\s+nlu014', stmt): >> patch.py
+echo                     if padded[0] in 'cC*!': continue >> patch.py
+echo                     if padded[5] not in ' 0\t\n\r': continue >> patch.py
+echo                     stmt = padded[6:].replace(' ', '').replace('\t', '').strip().lower() >> patch.py
+echo                     if not stmt: continue >> patch.py
+echo                     if 'subroutinenlu014' in stmt: >> patch.py
 echo                         in_sub = True >> patch.py
 echo                     if in_sub: >> patch.py
-echo                         if not line.strip(): continue >> patch.py
-echo                         if padded[0] in 'cC*!': continue >> patch.py
-echo                         if padded[5] not in ' 0\t\n\r': continue >> patch.py
-echo                         if not stmt: continue >> patch.py
 echo                         if stmt.startswith('subroutine'): continue >> patch.py
 echo                         if stmt.startswith('function'): continue >> patch.py
 echo                         if stmt.startswith('program'): continue >> patch.py
-echo                         if stmt.startswith('use '): continue >> patch.py
+echo                         if stmt.startswith('use'): continue >> patch.py
 echo                         if stmt.startswith('implicit'): continue >> patch.py
+echo                         if stmt.startswith('include'): continue >> patch.py
 echo                         insert_idx = i >> patch.py
 echo                         break >> patch.py
-echo                 if insert_idx != -1 and 'integer mlsval' not in c_new.lower(): >> patch.py
-echo                     lines.insert(insert_idx, '      integer mlsval') >> patch.py
-echo                     c_new = '\n'.join(lines) + '\n' >> patch.py
-echo             if c != c_new: >> patch.py
+echo                 if insert_idx != -1: >> patch.py
+echo                     if not any('mlsval' in l.lower() and 'integer' in l.lower() for l in lines): >> patch.py
+echo                         lines.insert(insert_idx, '      integer mlsval\n') >> patch.py
+echo                         modified = True >> patch.py
+echo             if modified: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
-echo                     f.write(c_new) >> patch.py
+echo                     f.writelines(lines) >> patch.py
 echo                 print('Patched', f_path) >> patch.py
 
 :: Execute the patch
