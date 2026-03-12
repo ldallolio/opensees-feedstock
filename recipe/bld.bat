@@ -14,19 +14,25 @@ echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  
 echo             if file.lower() == 'c14-sk-m.f': >> patch.py
 echo                 lines = c_new.splitlines() >> patch.py
 echo                 insert_idx = -1 >> patch.py
+echo                 in_sub = False >> patch.py
 echo                 for i in range(len(lines)): >> patch.py
 echo                     line = lines[i] >> patch.py
-echo                     # Skip comments and blank lines >> patch.py
-echo                     if len(line) ^< 6 or line[0] in 'cC*!' or not line.strip(): continue >> patch.py
-echo                     # Skip Fortran multi-line continuations >> patch.py
-echo                     if len(line) ^>= 6 and line[5] not in ' 0\t': continue >> patch.py
-echo                     stmt = line[6:].strip().lower() >> patch.py
-echo                     # Skip headers and implicit statements to obey F77 sequence rules >> patch.py
-echo                     if stmt.startswith('implicit'): continue >> patch.py
-echo                     if stmt.startswith('subroutine') or stmt.startswith('function') or stmt.startswith('program'): continue >> patch.py
-echo                     # The very first non-implicit statement found is our safe injection point >> patch.py
-echo                     insert_idx = i >> patch.py
-echo                     break >> patch.py
+echo                     padded = line + '       ' >> patch.py
+echo                     stmt = padded[6:].strip().lower() >> patch.py
+echo                     if re.match(r'subroutine\s+nlu014', stmt): >> patch.py
+echo                         in_sub = True >> patch.py
+echo                     if in_sub: >> patch.py
+echo                         if not line.strip(): continue >> patch.py
+echo                         if padded[0] in 'cC*!': continue >> patch.py
+echo                         if padded[5] not in ' 0\t\n\r': continue >> patch.py
+echo                         if not stmt: continue >> patch.py
+echo                         if stmt.startswith('subroutine'): continue >> patch.py
+echo                         if stmt.startswith('function'): continue >> patch.py
+echo                         if stmt.startswith('program'): continue >> patch.py
+echo                         if stmt.startswith('use '): continue >> patch.py
+echo                         if stmt.startswith('implicit'): continue >> patch.py
+echo                         insert_idx = i >> patch.py
+echo                         break >> patch.py
 echo                 if insert_idx != -1 and 'integer mlsval' not in c_new.lower(): >> patch.py
 echo                     lines.insert(insert_idx, '      integer mlsval') >> patch.py
 echo                     c_new = '\n'.join(lines) + '\n' >> patch.py
