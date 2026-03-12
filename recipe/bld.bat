@@ -11,19 +11,25 @@ echo             with open(f_path, 'r', encoding='latin1') as f: >> patch.py
 echo                 c = f.read() >> patch.py
 echo             c_new = re.sub(r'(?i)implicit\s+none', '             ', c) >> patch.py
 echo             c_new = re.sub(r'(?i)implicit\s+undefined', '                  ', c_new) >> patch.py
-echo             if file.lower() == 'c14-sk-m.f' and 'integer mlsval' not in c_new.lower(): >> patch.py
+echo             if file.lower() == 'c14-sk-m.f': >> patch.py
 echo                 lines = c_new.splitlines() >> patch.py
-echo                 insert_idx = 0 >> patch.py
-echo                 # Find the last implicit or subroutine statement in the header >> patch.py
-echo                 for i in range(min(20, len(lines))): >> patch.py
-echo                     if 'implicit' in lines[i].lower() or 'subroutine' in lines[i].lower(): >> patch.py
-echo                         insert_idx = i + 1 >> patch.py
-echo                 # Skip over any Fortran 77 multi-line continuations >> patch.py
-echo                 while insert_idx ^< len(lines) and len(lines[insert_idx]) ^>= 6 and lines[insert_idx][5] not in ' 0\t': >> patch.py
-echo                     insert_idx += 1 >> patch.py
-echo                 # Inject exactly in the legal declaration zone >> patch.py
-echo                 lines.insert(insert_idx, '      integer mlsval') >> patch.py
-echo                 c_new = '\n'.join(lines) + '\n' >> patch.py
+echo                 insert_idx = -1 >> patch.py
+echo                 for i in range(len(lines)): >> patch.py
+echo                     line = lines[i] >> patch.py
+echo                     # Skip comments and blank lines >> patch.py
+echo                     if len(line) ^< 6 or line[0] in 'cC*!' or not line.strip(): continue >> patch.py
+echo                     # Skip Fortran multi-line continuations >> patch.py
+echo                     if len(line) ^>= 6 and line[5] not in ' 0\t': continue >> patch.py
+echo                     stmt = line[6:].strip().lower() >> patch.py
+echo                     # Skip headers and implicit statements to obey F77 sequence rules >> patch.py
+echo                     if stmt.startswith('implicit'): continue >> patch.py
+echo                     if stmt.startswith('subroutine') or stmt.startswith('function') or stmt.startswith('program'): continue >> patch.py
+echo                     # The very first non-implicit statement found is our safe injection point >> patch.py
+echo                     insert_idx = i >> patch.py
+echo                     break >> patch.py
+echo                 if insert_idx != -1 and 'integer mlsval' not in c_new.lower(): >> patch.py
+echo                     lines.insert(insert_idx, '      integer mlsval') >> patch.py
+echo                     c_new = '\n'.join(lines) + '\n' >> patch.py
 echo             if c != c_new: >> patch.py
 echo                 with open(f_path, 'w', encoding='latin1') as f: >> patch.py
 echo                     f.write(c_new) >> patch.py
