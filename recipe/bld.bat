@@ -38,16 +38,25 @@ echo         c_new = '\n'.join(out_lines) + '\n' >> patch.py
 echo         if c != c_new: >> patch.py
 echo             with open(f_path, 'w', encoding='latin1') as f: f.write(c_new) >> patch.py
 echo             print('Patched and inlined', f_path) >> patch.py
+:: Generate Linker Aliases for Fortran Mangling
+echo syms = "DGEEV DSBEVX DPOTRF DTRTRS DGESV DGETRF DGETRI DGELS DGGEV DPBSV DPBTRS DGBSV DGBTRS DGETRS DTRSV DGEMV DTRSM DGEMM DGER DSAUPD DSEUPD SDMUC PML_2D PML_3D STEEL STEELDR COMPR14 TENSI14 MYGENMMD FILL00 RESP00 STIF00 GET00".split() >> patch.py
+echo aliases = [] >> patch.py
+echo for s in syms: >> patch.py
+echo     aliases.append("/ALTERNATENAME:" + s + "=" + s.lower() + "_") >> patch.py
+echo     aliases.append("/ALTERNATENAME:" + s.lower() + "_=" + s.lower()) >> patch.py
+echo with open('set_aliases.bat', 'w') as f: >> patch.py
+echo     f.write('set "MANGLING_ALIASES=' + ' '.join(aliases) + '"\n') >> patch.py
 
-:: Execute the patch
+:: Execute the patch and load the aliases
 python patch.py
 if errorlevel 1 exit 1
+call set_aliases.bat
 
 :: Setup build directory
 mkdir build
 cd build
 
-:: Configure CMake (No Fortran flags needed now)
+:: Configure CMake (Added HDF5 dynamic lib flag and Fortran Linker Aliases)
 cmake -G "NMake Makefiles JOM" ^
       -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
       -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
@@ -55,7 +64,10 @@ cmake -G "NMake Makefiles JOM" ^
       -DTCL_LIBRARY="%LIBRARY_PREFIX%/lib/tcl86t.lib" ^
       -DTCL_INCLUDE_PATH="%LIBRARY_PREFIX%/include" ^
       -DOpenSees_ENABLE_MPI=OFF ^
-      -DCMAKE_CXX_FLAGS="/EHsc /w" ^
+      -DCMAKE_CXX_FLAGS="/EHsc /w -DH5_BUILT_AS_DYNAMIC_LIB" ^
+      -DCMAKE_EXE_LINKER_FLAGS="%MANGLING_ALIASES%" ^
+      -DCMAKE_SHARED_LINKER_FLAGS="%MANGLING_ALIASES%" ^
+      -DCMAKE_MODULE_LINKER_FLAGS="%MANGLING_ALIASES%" ^
       ..
 if errorlevel 1 exit 1
 
