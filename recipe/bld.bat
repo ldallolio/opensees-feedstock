@@ -51,20 +51,25 @@ echo     f.write(' '.join(aliases) + '\n') >> patch.py
 python patch.py
 if errorlevel 1 exit 1
 
-:: Get forward-slashed SRC_DIR for CMake absolute paths
+:: Get forward-slashed paths for CMake
 set "FWD_SRC_DIR=%SRC_DIR:\=/%"
+set "FWD_PREFIX=%PREFIX:\=/%"
 
 :: Setup build directory
 mkdir build
 cd build
 
-:: Configure CMake (Now using ABSOLUTE path for response file)
+:: Configure CMake (Now explicitly forcing Conda's Python to fix OverLinkingError)
 cmake -G "NMake Makefiles JOM" ^
       -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
       -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
       -DCMAKE_BUILD_TYPE=Release ^
       -DTCL_LIBRARY="%LIBRARY_PREFIX%/lib/tcl86t.lib" ^
       -DTCL_INCLUDE_PATH="%LIBRARY_PREFIX%/include" ^
+      -DPython_EXECUTABLE="%FWD_PREFIX%/python.exe" ^
+      -DPython3_EXECUTABLE="%FWD_PREFIX%/python.exe" ^
+      -DPython_FIND_REGISTRY=NEVER ^
+      -DPython3_FIND_REGISTRY=NEVER ^
       -DOpenSees_ENABLE_MPI=OFF ^
       -DCMAKE_CXX_FLAGS="/EHsc /w -DH5_BUILT_AS_DYNAMIC_LIB" ^
       -DCMAKE_EXE_LINKER_FLAGS="@%FWD_SRC_DIR%/aliases.rsp" ^
@@ -88,5 +93,3 @@ if errorlevel 1 exit 1
 :: Move the Python extension to the site-packages directory and rename to .pyd
 copy "%LIBRARY_BIN%\opensees.so" "%SP_DIR%\opensees.pyd"
 if errorlevel 1 exit 1
-
-:: Note: OpenSees.exe is already in %LIBRARY_BIN% via cmake install.
