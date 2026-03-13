@@ -38,25 +38,24 @@ echo         c_new = '\n'.join(out_lines) + '\n' >> patch.py
 echo         if c != c_new: >> patch.py
 echo             with open(f_path, 'w', encoding='latin1') as f: f.write(c_new) >> patch.py
 echo             print('Patched and inlined', f_path) >> patch.py
-:: Generate Linker Aliases for Fortran Mangling (Now including FEAP routines)
+:: Generate Linker Aliases via Response File (to avoid CMD char limits)
 echo syms = "DGEEV DSBEVX DPOTRF DTRTRS DGESV DGETRF DGETRI DGELS DGGEV DPBSV DPBTRS DGBSV DGBTRS DGETRS DTRSV DGEMV DTRSM DGEMM DGER DSAUPD DSEUPD SDMUC PML_2D PML_3D STEEL STEELDR COMPR14 TENSI14 MYGENMMD FILL00 RESP00 STIF00 GET00 GETCOMMON FILLCOMMON ELMT01 ELMT02 ELMT03 ELMT04 ELMT05 ELMT06 ELMT11 MATL01 MATL02 MATL03".split() >> patch.py
 echo aliases = [] >> patch.py
 echo for s in syms: >> patch.py
 echo     aliases.append("/ALTERNATENAME:" + s + "=" + s.lower() + "_") >> patch.py
 echo     aliases.append("/ALTERNATENAME:" + s.lower() + "_=" + s.lower()) >> patch.py
-echo with open('set_aliases.bat', 'w') as f: >> patch.py
-echo     f.write('set "MANGLING_ALIASES=' + ' '.join(aliases) + '"\n') >> patch.py
+echo with open('aliases.rsp', 'w') as f: >> patch.py
+echo     f.write(' '.join(aliases) + '\n') >> patch.py
 
-:: Execute the patch and load the aliases
+:: Execute the patch and generate aliases.rsp
 python patch.py
 if errorlevel 1 exit 1
-call set_aliases.bat
 
 :: Setup build directory
 mkdir build
 cd build
 
-:: Configure CMake
+:: Configure CMake (Now using @../aliases.rsp)
 cmake -G "NMake Makefiles JOM" ^
       -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
       -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
@@ -65,9 +64,9 @@ cmake -G "NMake Makefiles JOM" ^
       -DTCL_INCLUDE_PATH="%LIBRARY_PREFIX%/include" ^
       -DOpenSees_ENABLE_MPI=OFF ^
       -DCMAKE_CXX_FLAGS="/EHsc /w -DH5_BUILT_AS_DYNAMIC_LIB" ^
-      -DCMAKE_EXE_LINKER_FLAGS="%MANGLING_ALIASES%" ^
-      -DCMAKE_SHARED_LINKER_FLAGS="%MANGLING_ALIASES%" ^
-      -DCMAKE_MODULE_LINKER_FLAGS="%MANGLING_ALIASES%" ^
+      -DCMAKE_EXE_LINKER_FLAGS="@../aliases.rsp" ^
+      -DCMAKE_SHARED_LINKER_FLAGS="@../aliases.rsp" ^
+      -DCMAKE_MODULE_LINKER_FLAGS="@../aliases.rsp" ^
       ..
 if errorlevel 1 exit 1
 
