@@ -1,7 +1,7 @@
 :: Remove read-only attributes natively on Windows
 attrib -R SRC\*.* /S
 
-:: Safely patch Fortran files with strict F77 sequence compliance
+:: Safely patch Fortran files with strict sequence compliance
 echo import os, re > patch.py
 echo for root, dirs, files in os.walk('SRC'): >> patch.py
 echo     for file in files: >> patch.py
@@ -12,31 +12,12 @@ echo             with open(f_path, 'r', encoding='latin1') as f: c = f.read() >>
 echo         except: continue >> patch.py
 echo         c_new = re.sub(r'(?i)implicit\s*none', '             ', c) >> patch.py
 echo         c_new = re.sub(r'(?i)implicit\s*undefined', '                  ', c_new) >> patch.py
-echo         if file.lower() == 'c14-sk-m.f' and 'integer mlsval' not in c_new.lower(): >> patch.py
+echo         if file.lower() == 'c14-sk-m.f': >> patch.py
 echo             lines = c_new.splitlines() >> patch.py
-echo             insert_idx = -1 >> patch.py
-echo             in_sub = False >> patch.py
-echo             for i in range(len(lines)): >> patch.py
-echo                 line = lines[i] >> patch.py
-echo                 if not line.strip(): continue >> patch.py
-echo                 padded = line.ljust(7) >> patch.py
-echo                 if padded[0] in 'cC*!': continue >> patch.py
-echo                 stmt_ns = padded[6:].replace(' ', '').replace('\t', '').lower() >> patch.py
-echo                 if 'subroutinenlu014' in stmt_ns: >> patch.py
-echo                     in_sub = True >> patch.py
-echo                 if in_sub: >> patch.py
-echo                     if padded[5] not in ' 0\t': continue >> patch.py
-echo                     stmt = padded[6:].strip().lower() >> patch.py
-echo                     if not stmt: continue >> patch.py
-echo                     if stmt.startswith('subroutine'): continue >> patch.py
-echo                     if stmt.startswith('implicit'): continue >> patch.py
-echo                     if stmt.startswith('include'): continue >> patch.py
-echo                     if stmt.startswith('use'): continue >> patch.py
-echo                     insert_idx = i >> patch.py
-echo                     break >> patch.py
-echo             if insert_idx != -1: >> patch.py
-echo                 lines.insert(insert_idx, '      integer mlsval') >> patch.py
-echo                 c_new = '\n'.join(lines) + '\n' >> patch.py
+echo             for i in range(len(lines) - 1): >> patch.py
+echo                 if 'cDEC$ ATTRIBUTES' in lines[i] and 'COMMON /MLSVAL/' in lines[i+1]: >> patch.py
+echo                     lines[i], lines[i+1] = lines[i+1], lines[i] >> patch.py
+echo             c_new = '\n'.join(lines) + '\n' >> patch.py
 echo         if c != c_new: >> patch.py
 echo             with open(f_path, 'w', encoding='latin1') as f: f.write(c_new) >> patch.py
 echo             print('Patched', f_path) >> patch.py
