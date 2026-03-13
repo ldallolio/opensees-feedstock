@@ -39,7 +39,7 @@ cmake -G "NMake Makefiles JOM" ^
       -DTCL_INCLUDE_PATH="%LIBRARY_PREFIX%/include" ^
       -DOpenSees_ENABLE_MPI=OFF ^
       -DCMAKE_CXX_FLAGS="/EHsc /w" ^
-      -DCMAKE_Fortran_FLAGS="-I../SRC/material/uniaxial/drain" ^
+      -DCMAKE_Fortran_FLAGS="-I../SRC/material/nD/feap -I../SRC/material/uniaxial/drain" ^
       ..
 if errorlevel 1 exit 1
 
