@@ -84,15 +84,9 @@ if errorlevel 1 exit 1
 cmake --install . --verbose
 if errorlevel 1 exit 1
 
-:: --- Post-Build Fixes per Instructions ---
-if exist bin\OpenSeesPy.dll (
-    move bin\OpenSeesPy.dll bin\opensees.pyd
-) else (
-    echo "Could not find OpenSeesPy.dll to rename"
-)
-
-copy bin\opensees.pyd "%SP_DIR%\opensees.pyd"
+:: --- Post-Build Fixes ---
+:: Move the Python extension to the site-packages directory and rename to .pyd
+copy "%LIBRARY_BIN%\opensees.so" "%SP_DIR%\opensees.pyd"
 if errorlevel 1 exit 1
 
-copy bin\OpenSees.exe "%LIBRARY_BIN%\OpenSees.exe"
-if errorlevel 1 exit 1
+:: Note: OpenSees.exe is already in %LIBRARY_BIN% via cmake install.
