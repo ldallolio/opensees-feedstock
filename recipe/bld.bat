@@ -51,11 +51,14 @@ echo     f.write(' '.join(aliases) + '\n') >> patch.py
 python patch.py
 if errorlevel 1 exit 1
 
+:: Get forward-slashed SRC_DIR for CMake absolute paths
+set "FWD_SRC_DIR=%SRC_DIR:\=/%"
+
 :: Setup build directory
 mkdir build
 cd build
 
-:: Configure CMake (Now using @../aliases.rsp)
+:: Configure CMake (Now using ABSOLUTE path for response file)
 cmake -G "NMake Makefiles JOM" ^
       -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
       -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
@@ -64,9 +67,9 @@ cmake -G "NMake Makefiles JOM" ^
       -DTCL_INCLUDE_PATH="%LIBRARY_PREFIX%/include" ^
       -DOpenSees_ENABLE_MPI=OFF ^
       -DCMAKE_CXX_FLAGS="/EHsc /w -DH5_BUILT_AS_DYNAMIC_LIB" ^
-      -DCMAKE_EXE_LINKER_FLAGS="@../aliases.rsp" ^
-      -DCMAKE_SHARED_LINKER_FLAGS="@../aliases.rsp" ^
-      -DCMAKE_MODULE_LINKER_FLAGS="@../aliases.rsp" ^
+      -DCMAKE_EXE_LINKER_FLAGS="@%FWD_SRC_DIR%/aliases.rsp" ^
+      -DCMAKE_SHARED_LINKER_FLAGS="@%FWD_SRC_DIR%/aliases.rsp" ^
+      -DCMAKE_MODULE_LINKER_FLAGS="@%FWD_SRC_DIR%/aliases.rsp" ^
       ..
 if errorlevel 1 exit 1
 
