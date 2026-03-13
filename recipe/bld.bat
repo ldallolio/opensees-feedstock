@@ -38,8 +38,8 @@ echo         c_new = '\n'.join(out_lines) + '\n' >> patch.py
 echo         if c != c_new: >> patch.py
 echo             with open(f_path, 'w', encoding='latin1') as f: f.write(c_new) >> patch.py
 echo             print('Patched and inlined', f_path) >> patch.py
-:: Generate Linker Aliases for Fortran Mangling
-echo syms = "DGEEV DSBEVX DPOTRF DTRTRS DGESV DGETRF DGETRI DGELS DGGEV DPBSV DPBTRS DGBSV DGBTRS DGETRS DTRSV DGEMV DTRSM DGEMM DGER DSAUPD DSEUPD SDMUC PML_2D PML_3D STEEL STEELDR COMPR14 TENSI14 MYGENMMD FILL00 RESP00 STIF00 GET00".split() >> patch.py
+:: Generate Linker Aliases for Fortran Mangling (Now including FEAP routines)
+echo syms = "DGEEV DSBEVX DPOTRF DTRTRS DGESV DGETRF DGETRI DGELS DGGEV DPBSV DPBTRS DGBSV DGBTRS DGETRS DTRSV DGEMV DTRSM DGEMM DGER DSAUPD DSEUPD SDMUC PML_2D PML_3D STEEL STEELDR COMPR14 TENSI14 MYGENMMD FILL00 RESP00 STIF00 GET00 GETCOMMON FILLCOMMON ELMT01 ELMT02 ELMT03 ELMT04 ELMT05 ELMT06 ELMT11 MATL01 MATL02 MATL03".split() >> patch.py
 echo aliases = [] >> patch.py
 echo for s in syms: >> patch.py
 echo     aliases.append("/ALTERNATENAME:" + s + "=" + s.lower() + "_") >> patch.py
@@ -56,7 +56,7 @@ call set_aliases.bat
 mkdir build
 cd build
 
-:: Configure CMake (Added HDF5 dynamic lib flag and Fortran Linker Aliases)
+:: Configure CMake
 cmake -G "NMake Makefiles JOM" ^
       -DCMAKE_INSTALL_PREFIX="%LIBRARY_PREFIX%" ^
       -DCMAKE_PREFIX_PATH="%LIBRARY_PREFIX%" ^
